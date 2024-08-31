@@ -73,6 +73,18 @@
             const image = document.getElementById('image').files[0];
 
             if (name && role && instagramFollowers && instagramLink && tiktokFollowers && tiktokLink) {
+                // Verificar si el miembro ya existe
+                const { data: existingMember } = await supabaseClient
+                    .from('memers1')
+                    .select('*')
+                    .eq('name', name)
+                    .single();
+
+                if (existingMember && index === null) {
+                    alert("Este miembro ya está agregado.");
+                    return;
+                }
+
                 let imageUrl = '';
 
                 if (image) {
