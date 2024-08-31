@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mujeres</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script>
+        const { createClient } = supabase;
+
+        let supabaseClient;
+
+        document.addEventListener("DOMContentLoaded", async function() {
+            const supabaseUrl = 'https://iojvbxpbpobbnxxvbxfk.supabase.co';
+            const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlvanZieHBicG9iYm54eHZieGZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjIzNzcwMjksImV4cCI6MjAzNzk1MzAyOX0.kOglZFjlhMvF5KhzOcjUEfiCGom_87qNH0U6bp-vKt4';
+            supabaseClient = createClient(supabaseUrl, supabaseKey);
+
+            await loadMembers();
+        });
+
+        async function loadMembers() {
+            const { data: members, error } = await supabaseClient.from('memers1').select('*');
+            const membersContainer = document.querySelector('.team-members');
+            membersContainer.innerHTML = '';
+            members.forEach(member => {
+                const memberContainer = document.createElement('div');
+                memberContainer.classList.add('member');
+                memberContainer.innerHTML = `
+                    <img src="${member.image}" alt="${member.name}">
+                    <h3>${member.name}</h3>
+                    <p>${member.role}</p>
+                    <p>Seguidores en Instagram: ${member.instagramFollowers}</p>
+                    <p>Seguidores en TikTok: ${member.tiktokFollowers}</p>
+                    <p>
+                        <a href="${member.instagramLink}" target="_blank">Instagram</a> | 
+                        <a href="${member.tiktokLink}" target="_blank">TikTok</a>
+                    </p>
+                    <button onclick="removeMember(${member.id})">Eliminar</button>
+                    <button onclick="editMember(${member.id})">Editar</button>
+                `;
+                membersContainer.appendChild(memberContainer);
+            });
+        }
+
+        function addMember() {
+            const formContainer = document.createElement('div');
+            formContainer.classList.add('form-container');
+            formContainer.innerHTML = `
+                <form id="memberForm">
+                    <label>Nombre: <input type="text" id="name" required></label><br>
+                    <label>Rol: <input type="text" id="role" required></label><br>
+                    <label>Seguidores en Instagram: <input type="text" id="instagramFollowers" required></label><br>
+                    <label>Link de Instagram: <input type="text" id="instagramLink" required></label><br>
+                    <label>Seguidores en TikTok: <input type="text" id="tiktokFollowers" required></label><br>
+                    <label>Link de TikTok: <input type="text" id="tiktokLink" required></label><br>
+                    <label>Imagen: <input type="file" id="image" accept="image/*"></label><br>
+                    <button type="button" onclick="submitMemberForm()">Agregar</button>
+                    <button type="button" onclick="cancelForm()">Cancelar</button>
+                </form>
+            `;
+            document.body.appendChild(formContainer);
+        }
+
+        async function submitMemberForm(index = null) {
+            const name = document.getElementById('name').value;
+            const role = document.getElementById('role').value;
+            const instagramFollowers = document.getElementById('instagramFollowers').value;
+            const instagramLink = document.getElementById('instagramLink').value;
+            const tiktokFollowers = document.getElementById('tiktokFollowers').value;
+            const tiktokLink = document.getElementById('tiktokLink').value;
+            const image = document.getElementById('image').files[0];
+
+            if (name && role && instagramFollowers && instagramLink && tiktokFollowers && tiktokLink) {
+                let imageUrl = '';
+
+                if (image) {
+                    const formData = new FormData();
+                    formData.append('file', image);
+                    formData.append('upload_preset', 'my_upload_preset');
+
+                    try {
+                        const response = await axios.post('https://api.cloudinary.com/v1_1/dvtygy45u/image/upload', formData);
+                        imageUrl = response.data.secure_url;
+                    } catch (error) {
+                        console.error('Error al subir la imagen:', error.message);
+                        alert(`Error al subir la imagen: ${error.message}`);
+                        return;
+                    }
+                }
+
+                const memberData = {
+                    name,
+                    role,
+                    instagramFollowers,
+                    instagramLink,
+                    tiktokFollowers,
+                    tiktokLink,
+                    image: imageUrl || (index !== null ? (await supabaseClient.from('memers1').select('image').eq('id', index).single()).data.image : '')
+                };
+
+                try {
+                    if (index === null) {
+                        const { error } = await supabaseClient.from('memers1').insert([memberData]);
+                        if (error) throw error;
+                    } else {
+                        const { error } = await supabaseClient.from('memers1').update(memberData).eq('id', index);
+                        if (error) throw error;
+                    }
+
+                    await loadMembers();
+                    document.body.removeChild(document.querySelector('.form-container'));
+                } catch (error) {
+                    console.error('Error:', error.message);
+                    alert(`Error al agregar miembro: ${error.message}`);
+                }
+            } else {
+                alert("Todos los campos son obligatorios.");
+            }
+        }
+
+        async function editMember(id) {
+            const { data: member, error } = await supabaseClient.from('memers1').select('*').eq('id', id).single();
+
+            const formContainer = document.createElement('div');
+            formContainer.classList.add('form-container');
+            formContainer.innerHTML = `
+                <form id="memberForm">
+                    <label>Nombre: <input type="text" id="name" value="${member.name}" required></label><br>
+                    <label>Rol: <input type="text" id="role" value="${member.role}" required></label><br>
+                    <label>Seguidores en Instagram: <input type="text" id="instagramFollowers" value="${member.instagramFollowers}" required></label><br>
+                    <label>Link de Instagram: <input type="text" id="instagramLink" value="${member.instagramLink}" required></label><br>
+                    <label>Seguidores en TikTok: <input type="text" id="tiktokFollowers" value="${member.tiktokFollowers}" required></label><br>
+                    <label>Link de TikTok: <input type="text" id="tiktokLink" value="${member.tiktokLink}" required></label><br>
+                    <label>Imagen actual:</label><br>
+                    <img src="${member.image}" alt="Imagen actual" style="max-width: 200px;"><br>
+                    <label>Actualizar Imagen: <input type="file" id="image" accept="image/*"></label><br>
+                    <button type="button" onclick="submitMemberForm(${member.id})">Guardar Cambios</button>
+                    <button type="button" onclick="cancelForm()">Cancelar</button>
+                </form>
+            `;
+            document.body.appendChild(formContainer);
+        }
+
+        function cancelForm() {
+            document.body.removeChild(document.querySelector('.form-container'));
+        }
+
+        async function removeMember(id) {
+            if (confirm("¿Estás seguro de que deseas eliminar este miembro?")) {
+                await supabaseClient.from('memers1').delete().eq('id', id);
+                await loadMembers();
+            }
+        }
+    </script>
+</head>
+<body>
+    <header>
+        <div class="top-bar">
+            <div class="left">
+                <img src="ftagencyeblanco.png" alt="Descripción del ícono">
+            </div>
+            <div class="right">
+                <nav>
+                    <ul>
+                        <li><a href="index.html">Inicio</a></li>
+                        <li><a href="page2.html">Influencers</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </header>
+    <div class="team-content">
+        <h2>Miembros del Equipo</h2>
+        <div class="team-members">
+            <!-- Aquí se cargarán los miembros del equipo -->
+        </div>
+        <button onclick="addMember()">Agregar Miembro</button>
+        <button class="back-button" onclick="location.href='page2.html'">Volver</button>
+    </div>
+</body>
+</html>

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Página Principal</title>
+    <link rel="stylesheet" href="styles.css">
+    <script> 
+    </script>
+    <link rel="manifest" href="manifest.json">
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/service-worker.js')
+            .then(function(registration) {
+                console.log('Service Worker registered with scope:', registration.scope);
+            }).catch(function(error) {
+                console.log('Service Worker registration failed:', error);
+            });
+        }
+    </script>
+    
+</head>
+<body>
+    <header>
+        <div class="top-bar">
+            <div class="left">
+                <img src="ftagencyeblanco.png" alt="Descripción del ícono"> 
+            </div>
+            <div class="right">
+                <nav>
+                    <ul>
+                        <li><a href="index.html">Inicio</a></li>
+                        <li><a href="#" onclick="authenticateAndRedirect('page2.html')">Influencer's</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </header>
+    <section class="main-content">
+        <div class="image-container">
+            <img src="Facetune_30-03-2024-18-42-16.JPG" alt="Influencer">
+        </div>
+        <div class="text-container">
+            <h2>Colaboraciones exitosas</h2>
+            <p>Reconocidos e influyentes</p>
+            <button onclick="location.href='page2.html'">Descubre</button>
+        </div>
+    </section>
+</body>
+</html>
+
+
+
