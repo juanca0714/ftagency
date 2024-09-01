@@ -73,34 +73,40 @@
             const image = document.getElementById('image').files[0];
 
             if (name && role && instagramFollowers && instagramLink && tiktokFollowers && tiktokLink) {
-                let imageUrl = '';
+                try {
+                    // Verificar si el miembro ya existe
+                    const { data: existingMember } = await supabaseClient
+                        .from('members')
+                        .select('id')
+                        .eq('name', name)
+                        .single();
 
-                if (image) {
-                    const formData = new FormData();
-                    formData.append('file', image);
-                    formData.append('upload_preset', 'my_upload_preset');
-
-                    try {
-                        const response = await axios.post('https://api.cloudinary.com/v1_1/dvtygy45u/image/upload', formData);
-                        imageUrl = response.data.secure_url;
-                    } catch (error) {
-                        console.error('Error al subir la imagen:', error.message);
-                        alert(`Error al subir la imagen: ${error.message}`);
+                    if (existingMember && index === null) {
+                        alert("Este miembro ya está agregado.");
                         return;
                     }
-                }
 
-                const memberData = {
-                    name,
-                    role,
-                    instagramFollowers,
-                    instagramLink,
-                    tiktokFollowers,
-                    tiktokLink,
-                    image: imageUrl || (index !== null ? (await supabaseClient.from('members').select('image').eq('id', index).single()).data.image : '')
-                };
+                    let imageUrl = '';
 
-                try {
+                    if (image) {
+                        const formData = new FormData();
+                        formData.append('file', image);
+                        formData.append('upload_preset', 'my_upload_preset');
+
+                        const response = await axios.post('https://api.cloudinary.com/v1_1/dvtygy45u/image/upload', formData);
+                        imageUrl = response.data.secure_url;
+                    }
+
+                    const memberData = {
+                        name,
+                        role,
+                        instagramFollowers,
+                        instagramLink,
+                        tiktokFollowers,
+                        tiktokLink,
+                        image: imageUrl || (index !== null ? (await supabaseClient.from('members').select('image').eq('id', index).single()).data.image : '')
+                    };
+
                     if (index === null) {
                         const { error } = await supabaseClient.from('members').insert([memberData]);
                         if (error) throw error;
@@ -177,7 +183,7 @@
             <!-- Aquí se cargarán los miembros del equipo -->
         </div>
         <button onclick="addMember()">Agregar Miembro</button>
-        <button class="back-button" onclick="location.href='page2.html'">Volver a Influencers</button>
+        <button class="back-button" onclick="location.href='page2.html'">Volver</button>
     </div>
 </body>
 </html>
